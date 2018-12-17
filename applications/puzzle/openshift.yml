@@ -1,0 +1,88 @@
+--- 
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: puzzles
+  labels:
+    course: tutorial
+    app: puzzles
+    type: image
+spec:
+  lookupPolicy:
+    local: true
+---
+kind: BuildConfig
+apiVersion: v1
+metadata:
+  name: puzzles
+  labels:
+    course: tutorial
+    app: puzzles
+spec:
+  runPolicy: Serial
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "puzzles:latest"
+  source:
+    git:
+      uri: "https://github.com/Mad-ness/openshift-puzzles.git"
+      ref: puzzle
+    type: Git
+  strategy:
+    sourceStrategy:
+      contextDir: applications/puzzle
+      from: 
+        kind: "DockerImage"
+        name: "node:boron"
+      type: Source
+  successfulBuildsHistory: 5
+  triggers:
+    - type: ImageChange
+    - type: ConfigChange
+
+        
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: puzzles
+  labels:
+    course: tutorial
+    app: puzzles
+spec:
+  selector:
+    course: tutorial
+    app: puzzles
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: puzzles
+---
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: puzzles
+  labels:
+    course: tutorial
+    app: puzzles
+spec:
+  replicas: 1
+  selector:
+    course: tutorial
+    app: puzzles
+  template:
+    metadata:
+      labels:
+        course: tutorial
+        app: puzzles
+    spec:
+      name: puzzles
+      containers:
+        - name: puzzles
+          image: "puzzles:latest"
+          ports:
+            - targetPort: 3000
+              port: 3000
+              name: puzzle
+
